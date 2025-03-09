@@ -55,7 +55,7 @@ This modular solution integrates multiple AI components, each handling a **disti
    ```
 
 ### **3️⃣ Vector Storage & Retrieval**
-- **Tools Used:** Weaviate (or Pinecone), LlamaIndex
+- **Tools Used:** Weaviate, LlamaIndex
 - **Purpose:** Stores **sermon embeddings** and **metadata** for **fast, contextual retrieval**.
 - **Retrieval Example:**  
    ```json
