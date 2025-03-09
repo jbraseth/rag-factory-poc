@@ -1,0 +1,52 @@
+{
+  "actions": [
+    {
+      "name": "analyze_sermon",
+      "description": "Analyzes sermon text to extract a summary, themes, and emotional tone. It also integrates rich metadata (title, speaker, timestamp) and, when the user query indicates (e.g. via the keyword 'link'), generates or includes an embed link for the sermon reference.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sermon_text": {
+            "type": "string",
+            "description": "The full text of the sermon."
+          },
+          "query": {
+            "type": "string",
+            "description": "The user query which may indicate if an embed link should be provided (e.g. contains the word 'link')."
+          },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "The title of the sermon."
+              },
+              "speaker": {
+                "type": "string",
+                "description": "The speaker of the sermon."
+              },
+              "timestamp": {
+                "type": "string",
+                "description": "The timestamp of the sermon."
+              },
+              "reference_link": {
+                "type": "string",
+                "description": "An optional embed link if available. If not provided, one will be generated based on the sermon title."
+              }
+            },
+            "required": [
+              "title",
+              "speaker",
+              "timestamp"
+            ]
+          }
+        },
+        "required": [
+          "sermon_text",
+          "query",
+          "metadata"
+        ]
+      }
+    }
+  ]
+}
