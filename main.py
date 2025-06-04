@@ -7,7 +7,7 @@ from evaluate_tools.transcription.file_sharding import split_audio
 from evaluate_tools.transcription.transcribe import transcribe_audio
 from evaluate_tools.transcription.diarization import diarize_speakers
 from evaluate_tools.metadata.references import nlp as spacy_nlp
-from evaluate_tools.metadata.sentiment import emotion_analyzer
+from evaluate_tools.metadata.sentiment import analyze_sentiment
 from evaluate_tools.metadata.topics import extract_topics
 from evaluate_tools.vector_database import db_client
 from evaluate_tools.rag.retrieval import SermonVectorDB
@@ -43,7 +43,7 @@ def main(audio_path, user_query):
         doc = spacy_nlp(transcript_text)
         entities = [(ent.text, ent.label_) for ent in doc.ents]
         topic_info = topic_infos[idx]
-        sentiment = emotion_analyzer(transcript_text)
+        sentiment = analyze_sentiment(transcript_text)
 
         metadata = {
             "entities": entities,
