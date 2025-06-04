@@ -1,27 +1,79 @@
-from llama_index import Document, GPTSimpleVectorIndex
+"""
+Retrieval utilities for querying sermon passages using LlamaIndex ≥ 0.9
+"""
 
-# Define sample sermon documents with metadata
-documents = [
-    Document(
-        text="This sermon discusses the power of forgiveness and redemption. It reminds us that mercy is a divine gift.",
-        metadata={"title": "Forgiveness and Redemption", "speaker": "Pastor Mark", "timestamp": "2023-02-10"}
-    ),
-    Document(
-        text="In this message, we explore faith, hope, and love. The sermon emphasizes trusting in divine guidance.",
-        metadata={"title": "Faith, Hope, and Love", "speaker": "Pastor John", "timestamp": "2023-01-15"}
-    ),
-    Document(
-        text="This sermon focuses on community unity and support during times of adversity. It highlights the strength in togetherness.",
-        metadata={"title": "Community Unity", "speaker": "Pastor Luke", "timestamp": "2023-03-05"}
-    )
-]
+import os
+import json
+from llama_index.core import Document, VectorStoreIndex
 
-# Build the vector index using GPTSimpleVectorIndex
-index = GPTSimpleVectorIndex(documents)
+class SermonVectorDB:
+    """
+    Vector database for sermon transcripts and metadata using LlamaIndex.
+    Loads transcripts and metadata from the pipeline data directories.
+    """
 
-# Query the index for relevant sermon passages
-query = "What does the sermon say about forgiveness?"
-response = index.query(query)
+    def __init__(self, transcripts_dir=None, metadata_dir=None):
+        """
+        Initialize the vector database, loading documents from the specified directories.
+        """
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        self.transcripts_dir = transcripts_dir or os.path.join(base_dir, "data", "transcripts")
+        self.metadata_dir = metadata_dir or os.path.join(base_dir, "data", "sermons")
+        self.documents = []
+        self._load_documents()
+        self.index = VectorStoreIndex.from_documents(self.documents)
+        self.query_engine = self.index.as_query_engine()
 
-print("Query:", query)
-print("Response:", response)
+    def _load_documents(self):
+        """
+        Load all transcript and metadata files into Document objects.
+        """
+        for fname in os.listdir(self.transcripts_dir):
+            if fname.endswith(".txt"):
+                transcript_path = os.path.join(self.transcripts_dir, fname)
+                base = os.path.splitext(fname)[0]
+                metadata_path = os.path.join(self.metadata_dir, f"{base}.json")
+                with open(transcript_path, "r", encoding="utf-8") as f:
+                    text = f.read()
+                metadata = {}
+                if os.path.exists(metadata_path):
+                    with open(metadata_path, "r", encoding="utf-8") as mf:
+                        metadata = json.load(mf)
+                else:
+                    metadata = {"title": base, "speaker": "Unknown", "timestamp": "Unknown"}
+                self.documents.append(Document(text=text, metadata=metadata))
+
+    def add_sermon(self, title, text, metadata=None):
+        """
+        Add a new sermon to the database and update the index.
+        """
+        meta = metadata or {"title": title}
+        self.documents.append(Document(text=text, metadata=meta))
+        self.index = VectorStoreIndex.from_documents(self.documents)
+        self.query_engine = self.index.as_query_engine()
+
+    def search_sermons(self, queries):
+        """
+        Search for relevant sermon passages given a query or list of queries.
+        Returns a list of dicts with text, metadata, and score.
+        """
+        if isinstance(queries, str):
+            queries = [queries]
+        results = []
+        for query in queries:
+            response = self.query_engine.query(query)
+            for node in getattr(response, "source_nodes", []):
+                results.append({
+                    "text": node.node.get_content(),
+                    "metadata": node.node.metadata or {},
+                    "score": node.score,
+                })
+            if not getattr(response, "source_nodes", []):
+                results.append({"text": response.response, "metadata": {}})
+        return results
+
+# Example usage:
+# db = SermonVectorDB()
+# db.add_sermon("Faith and Hope", "This sermon explores the deep connection between faith and hope.")
+# results = db.search_sermons(["faith", "hope"])
+# print(results)

@@ -1,42 +1,63 @@
+"""
+Extracts scripture/book references from a sermon transcript using spaCy NER and regex backup.
+"""
+
+import re
 import spacy
-from spacy.tokens import Span
+
 
 # Load spaCy's pre-trained English model
 nlp = spacy.load("en_core_web_sm")
 
-# ----------------------------
-# Document-Level NER Extraction
-# ----------------------------
-text = "Apple is looking at buying U.K. startup for $1 billion."
-doc = nlp(text)
+# List of common Bible books for regex matching
+BIBLE_BOOKS = [
+    "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth",
+    "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah", "Esther",
+    "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah", "Lamentations",
+    "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah", "Nahum", "Habakkuk",
+    "Zephaniah", "Haggai", "Zechariah", "Malachi", "Matthew", "Mark", "Luke", "John", "Acts", "Romans",
+    "1 Corinthians", "2 Corinthians", "Galatians", "Ephesians", "Philippians", "Colossians",
+    "1 Thessalonians", "2 Thessalonians", "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews",
+    "James", "1 Peter", "2 Peter", "1 John", "2 John", "3 John", "Jude", "Revelation"
+]
 
-print("Document-Level Entities:")
-for ent in doc.ents:
-    print(f"{ent.text} ({ent.start_char}, {ent.end_char}) - {ent.label_}")
+# Regex pattern for scripture references (e.g., John 3:16, 1 Corinthians 13:4-7)
+BOOKS_PATTERN = "|".join([re.escape(book) for book in BIBLE_BOOKS])
+SCRIPTURE_REGEX = re.compile(
+    rf"\b({BOOKS_PATTERN})\s+\d{{1,3}}(?::\d{{1,3}}(?:-\d{{1,3}})?(?:,\s*\d{{1,3}}(?::\d{{1,3}})?)*)?\b",
+    re.IGNORECASE
+)
 
-# ----------------------------
-# Token-Level Entity Information
-# ----------------------------
-print("\nToken-Level Entity Info:")
-# For illustration, show info for the first two tokens
-if len(doc) >= 2:
-    print(f"Token: {doc[0].text}, IOB: {doc[0].ent_iob_}, Type: {doc[0].ent_type_}")
-    print(f"Token: {doc[1].text}, IOB: {doc[1].ent_iob_}, Type: {doc[1].ent_type_}")
+def extract_scripture_references(transcript):
+    """
+    Takes a sermon transcript as input and returns a list of detected scripture or book references
+    using spaCy NER and regex as backup.
+    Args:
+        transcript (str): The sermon transcript text.
+    Returns:
+        List[str]: List of detected scripture or book references.
+    """
+    doc = nlp(transcript)
+    references = set()
 
-# ----------------------------
-# Custom Entity Modification
-# ----------------------------
-# Example where the model misses "fb" as an organization
-custom_text = "fb is hiring a new vice president of global policy."
-doc_custom = nlp(custom_text)
+    # 1. Use spaCy NER to find book names (ORG, WORK_OF_ART, etc.)
+    for ent in doc.ents:
+        if ent.label_ in {"WORK_OF_ART", "ORG", "PERSON"}:
+            for book in BIBLE_BOOKS:
+                if ent.text.lower().startswith(book.lower()):
+                    match = SCRIPTURE_REGEX.search(transcript, ent.start_char)
+                    if match:
+                        references.add(match.group(0))
+                    else:
+                        references.add(book)
+                    break
 
-print("\nBefore custom modification:", [(ent.text, ent.label_) for ent in doc_custom.ents])
+    # 2. Use regex as backup for missed references
+    for match in SCRIPTURE_REGEX.finditer(transcript):
+        references.add(match.group(0))
 
-# Find token "fb" and add it as an ORG entity
-for token in doc_custom:
-    if token.text.lower() == "fb":
-        fb_ent = Span(doc_custom, token.i, token.i + 1, label="ORG")
-        doc_custom.ents = list(doc_custom.ents) + [fb_ent]
-        break
+    return sorted(references)
 
-print("After custom modification:", [(ent.text, ent.label_) for ent in doc_custom.ents])
+# Example usage:
+# transcript = "Today we read from John 3:16 and 1 Corinthians 13:4-7. The book of Genesis is also referenced."
+# print(extract_scripture_references(transcript))

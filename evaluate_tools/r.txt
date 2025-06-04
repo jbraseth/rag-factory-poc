@@ -1,8 +1,14 @@
-spacy
-transformers
 bertopic
+hf_xet
+librosa
 llama-index
 openai
-speechbrain
 pydub
+pylint
+pytest
+pytest-cov
+pytest-mock
+spacy
+speechbrain
+transformers
 weaviate-client

@@ -1,0 +1,37 @@
+[MASTER]
+# ------------------------------------------------------------------------
+# init-hook: shoe-horn our project root (and src/) onto pylint's sys.path
+#
+# 1) if p.find_pylintrc() exists (PyLint <= 2.17 / Python 3.9), use its dirname as ROOT
+#    otherwise (PyLint >= 2.18 / Python 3.12) fall back to os.getcwd() as ROOT
+# 2) insert ROOT so `import tests.<module>` works
+# 3) insert ROOT/src so src imports still resolve
+# ------------------------------------------------------------------------
+; disable=C0114,C0115,C0116,C0123,C0325,R1705,R0913,R0903,R1713,R1728,R1730,W0703,W0719,R0801
+init-hook="import os,sys;p=__import__('pylint.config',fromlist=['find_pylintrc']);root=(os.path.dirname(p.find_pylintrc()) if hasattr(p,'find_pylintrc') else os.getcwd());sys.path.insert(0,root);sys.path.insert(0,os.path.join(root,'src'))"
+ignore=pytest.ini
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    missing-function-docstring,
+    too-few-public-methods
+
+[FORMAT]
+variable-rgx=[a-z_][a-z0-9_]{0,50}$
+argument-rgx=[a-z_][a-z0-9_]{0,50}$
+attr-rgx=[a-z_][a-z0-9_]{0,50}$
+typevar-rgx=[A-Z_][a-zA-Z0-9]+$
+max-line-length=160
+
+[DESIGN]
+max-args=15
+max-positional-arguments=15
+max-locals=20
+max-branches=12
+max-statements=150
+max-public-methods=30
+max-attributes=15
+
+[TYPECHECK]
+extension-pkg-allow-list=lxml.etree
+ignored-modules=pytest,py
