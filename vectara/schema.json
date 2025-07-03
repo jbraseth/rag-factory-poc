@@ -1,0 +1,16 @@
+{
+  "document": {
+    "title": "Example Document",
+    "sections": [
+      {
+        "text": "Hello world",
+        "metadata": {
+          "origin_page": 1,
+          "start_time": "00:00:00",
+          "speaker": "spk1",
+          "source_type": "example"
+        }
+      }
+    ]
+  }
+}
