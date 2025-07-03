@@ -1,0 +1,12 @@
+.vscode
+
+.venv
+__pycache__
+.pytest_cache
+
+# Check in data dirs; ignore everything in them
+data/**/*
+!data/sermons
+!data/transcripts
+!data/sermons/.gitkeep
+!data/transcripts/.gitkeep
